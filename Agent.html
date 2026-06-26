@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Workout Auditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="Agent.css">
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+
+    <div class="relative max-w-5xl mx-auto glass-panel p-8 md:p-10 rounded-2xl fade-in">
+        <div class="flex items-center space-x-4 mb-2">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text text-gradient">AI Routine Auditor</h1>
+        </div>
+        <p class="text-slate-400 mb-8 font-medium">Define your training variables. Our agentic pipeline will audit your volume, balance, and frequency.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 rounded-xl glass-card">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Experience Level</label>
+                <select id="experience" class="w-full modern-input rounded-lg p-2.5 text-sm">
+                    <option value="beginner">Beginner (&lt; 1 year)</option>
+                    <option value="intermediate">Intermediate (1-3 years)</option>
+                    <option value="advanced">Advanced (3+ years)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Primary Goal</label>
+                <select id="goal" class="w-full modern-input rounded-lg p-2.5 text-sm">
+                    <option value="hypertrophy">Hypertrophy (Size)</option>
+                    <option value="strength">Pure Strength (Powerlifting)</option>
+                    <option value="endurance">Muscular Endurance</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Weekly Frequency</label>
+                <input type="number" id="frequency" value="4" min="1" max="7" class="w-full modern-input rounded-lg p-2.5 text-sm">
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-xl glass-card mb-8 mt-8">
+            <div>
+                <h3 class="text-lg font-bold text-slate-200">Start with a Template</h3>
+                <p class="text-xs text-slate-400">Instantly populate a recommended workout split</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="loadTemplate('ppl')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Push/Pull/Legs</button>
+                <button onclick="loadTemplate('upper_lower')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Upper/Lower Split</button>
+                <button onclick="loadTemplate('full_body')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Full Body Split</button>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-end mb-6 mt-12">
+            <h2 class="text-2xl font-bold text-slate-200 font-heading">Training Microcycle</h2>
+            <button onclick="addDay()" class="btn-secondary text-sm font-semibold py-2 px-4 rounded-lg flex items-center space-x-2">
+                <span>+ Add Day</span>
+            </button>
+        </div>
+        
+        <div id="days-container" class="space-y-6">
+            <!-- Day templates will be injected here -->
+        </div>
+
+        <div class="mt-12 flex justify-center">
+            <button onclick="submitRoutine()" class="btn-primary font-bold py-4 px-12 rounded-xl text-lg flex items-center space-x-3 w-full md:w-auto justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span>Initialize AI Audit</span>
+            </button>
+        </div>
+        
+        <div id="loading" class="hidden mt-8 text-center">
+            <div class="inline-flex items-center space-x-3 text-indigo-400 font-semibold bg-indigo-900/30 px-6 py-3 rounded-full border border-indigo-500/30 pulse-glow">
+                <svg class="animate-spin h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span>Agent is analyzing biometric vectors...</span>
+            </div>
+        </div>
+
+        <div id="results-panel" class="hidden mt-8 p-8 rounded-2xl glass-card border border-indigo-500/40 relative overflow-hidden">
+            
+            <h3 class="text-3xl font-extrabold text-white mb-2 font-heading flex items-center">
+                <span class="text-gradient">Audit Complete</span>
+                <svg class="w-8 h-8 ml-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </h3>
+            <p class="text-slate-400 text-sm mb-6 flex items-center">
+                <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Click any issue or fix below to have the AI elaborate with specific routine suggestions.
+            </p>
+            
+            <div class="flex items-center space-x-4 mb-8 bg-slate-900/50 inline-flex p-4 rounded-xl border border-slate-700/50">
+                <span class="text-sm font-bold uppercase text-slate-400 tracking-wider">Overall Score</span>
+                <span id="score-tag" class="text-4xl font-black text-white px-2">0</span>
+                <span class="text-slate-500 font-bold text-2xl">/10</span>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-red-900/20 p-5 rounded-xl border border-red-500/20">
+                    <h4 class="text-red-400 font-bold mb-3 flex items-center text-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Critical Flaws
+                    </h4>
+                    <ul id="flaws-list" class="list-disc list-outside ml-5 text-slate-300 space-y-2 text-sm leading-relaxed"></ul>
+                </div>
+                <div class="bg-emerald-900/20 p-5 rounded-xl border border-emerald-500/20">
+                    <h4 class="text-emerald-400 font-bold mb-3 flex items-center text-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        Required Adjustments
+                    </h4>
+                    <ul id="adjustments-list" class="list-disc list-outside ml-5 text-slate-300 space-y-2 text-sm leading-relaxed"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="day-template">
+        <div class="day-card p-6 rounded-xl glass-card relative fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <input type="text" placeholder="Session Name (e.g., Push, Upper)" class="day-title bg-transparent border-b-2 border-slate-700 hover:border-indigo-500 focus:border-indigo-500 text-2xl font-bold text-white outline-none pb-1 w-full md:w-1/2 transition-colors">
+                <button onclick="this.closest('.day-card').remove()" class="text-slate-500 hover:text-red-400 text-sm font-semibold flex items-center space-x-1 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span class="hidden sm:inline">Delete Session</span>
+                </button>
+            </div>
+            
+            <!-- Headers for desktop -->
+            <div class="hidden md:grid grid-cols-12 gap-2 mb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <div class="col-span-3">Exercise Name</div>
+                <div class="col-span-2">Target Muscle</div>
+                <div class="col-span-2">Type</div>
+                <div class="col-span-1">Sets</div>
+                <div class="col-span-2">Reps</div>
+                <div class="col-span-1">RPE</div>
+                <div class="col-span-1 text-center">Act</div>
+            </div>
+
+            <div class="exercises-container space-y-2">
+                <!-- Exercises injected here -->
+            </div>
+            <button onclick="openExerciseModalForDay(this.previousElementSibling)" class="mt-4 text-sm text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1 group">
+                <div class="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/40 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+                <span>Add Movement</span>
+            </button>
+        </div>
+    </template>
+
+    <template id="exercise-template">
+        <div class="exercise-row grid grid-cols-1 md:grid-cols-12 gap-2 items-center glass-row p-3 rounded-lg fade-in">
+            <div class="md:col-span-3">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Exercise Name</label>
+                <div class="relative flex items-center group w-full">
+                    <input type="text" placeholder="Name..." class="ex-name w-full modern-input rounded-md p-2 text-sm pr-8" autocomplete="off">
+                    <button type="button" onclick="openExerciseModal(this)" class="absolute right-2 text-slate-400 hover:text-indigo-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </button>
+                    <div class="autocomplete-dropdown absolute left-0 right-0 top-full mt-1 bg-slate-950/95 border border-slate-700/80 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto hidden scrollbar-thin"></div>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-2 block">Target Muscle</label>
+                <select class="ex-muscle w-full modern-input rounded-md p-2 text-sm">
+                    <option value="" disabled selected>Muscle...</option>
+                    <option value="chest">Chest</option>
+                    <option value="back">Back</option>
+                    <option value="shoulders">Shoulders</option>
+                    <option value="quads">Quads</option>
+                    <option value="hamstrings/glutes">Hams/Glutes</option>
+                    <option value="core">Core</option>
+                    <option value="calves">Calves</option>
+                    <option value="biceps">Biceps</option>
+                    <option value="triceps">Triceps</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-2 block">Type</label>
+                <select class="ex-type w-full modern-input rounded-md p-2 text-sm">
+                    <option value="compound">Compound</option>
+                    <option value="isolation">Isolation</option>
+                </select>
+            </div>
+            <div class="md:col-span-1">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-2 block">Sets</label>
+                <input type="number" placeholder="Sets" class="ex-sets w-full modern-input rounded-md p-2 text-sm text-center" min="1" oninput="if(this.value !== '' && this.value < 1) this.value = 1;">
+            </div>
+            <div class="md:col-span-2">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-2 block">Reps/Time</label>
+                <select class="ex-reps w-full modern-input rounded-md p-2 text-sm">
+                    <option value="1-5">1-5 (Strength)</option>
+                    <option value="6-8">6-8 (Power/Size)</option>
+                    <option value="8-12" selected>8-12 (Hypertrophy)</option>
+                    <option value="12-15">12-15 (Endurance)</option>
+                    <option value="15-20">15-20 (Endurance)</option>
+                    <option value="60s">60s (Time/Hold)</option>
+                </select>
+            </div>
+            <div class="md:col-span-1">
+                <label class="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-2 block">RPE</label>
+                <input type="number" placeholder="RPE" class="ex-rpe w-full modern-input rounded-md p-2 text-sm text-center" min="0" max="10" oninput="if(this.value > 10) this.value = 10; if(this.value !== '' && this.value < 0) this.value = 0;">
+            </div>
+            <div class="md:col-span-1 text-center mt-3 md:mt-0">
+                <button type="button" onclick="this.closest('.exercise-row').remove()" class="btn-danger-icon">
+                    <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Exercise Picker Modal -->
+    <div id="exercise-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 p-4 fade-in">
+        <div class="glass-card w-full max-w-2xl p-6 rounded-2xl flex flex-col max-h-[85vh] border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white font-heading">Exercise Library</h3>
+                <button onclick="closeExerciseModal()" class="text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <input type="text" id="modal-search" placeholder="Search or type custom exercise..." class="modern-input w-full p-3 rounded-xl mb-4 text-base focus:ring-2 focus:ring-indigo-500" oninput="filterModal()">
+            
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="modal-filter-btn active-filter bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('all', this)">All</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('chest', this)">Chest</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('back', this)">Back</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('shoulders', this)">Shoulders</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('quads', this)">Quads</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('hamstrings/glutes', this)">Hams/Glutes</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('core', this)">Core</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('biceps', this)">Biceps</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('triceps', this)">Triceps</button>
+                <button class="modal-filter-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors shrink-0" onclick="setModalFilter('calves', this)">Calves</button>
+            </div>
+            
+            <div id="modal-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 scrollbar-thin flex-grow">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Elaboration Modal -->
+    <div id="elaboration-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 p-4 fade-in">
+        <div class="glass-card w-full max-w-2xl p-8 rounded-2xl flex flex-col max-h-[85vh] border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+            <div class="flex justify-between items-start mb-6">
+                <div class="pr-8">
+                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2 block">AI Deep Dive</span>
+                    <h3 id="elaboration-title" class="text-lg font-bold text-slate-200 leading-snug"></h3>
+                </div>
+                <button onclick="closeElaborationModal()" class="text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div id="elaboration-loading" class="py-12 flex flex-col items-center justify-center">
+                <svg class="animate-spin h-8 w-8 text-indigo-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="text-slate-400 text-sm font-semibold">Generating concrete suggestions...</p>
+            </div>
+
+            <div id="elaboration-content" class="hidden overflow-y-auto pr-2 scrollbar-thin flex-grow text-slate-300 leading-relaxed space-y-4 text-base">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="Agent.js"></script>
+</body>
+</html>
