@@ -9,6 +9,42 @@ document.addEventListener('DOMContentLoaded', () => {
     dayTemplate = document.getElementById('day-template');
     exerciseTemplate = document.getElementById('exercise-template');
 
+    // Check local storage for autosave
+    const savedData = localStorage.getItem('workout_routine_save');
+    if (savedData) {
+        try {
+            const payload = JSON.parse(savedData);
+            
+            // Restore top-level inputs
+            if (payload.experience) document.getElementById('experience').value = payload.experience;
+            if (payload.goal) document.getElementById('goal').value = payload.goal;
+            if (payload.days_per_week) document.getElementById('frequency').value = payload.days_per_week;
+            
+            // Reconstruct days
+            if (payload.sessions && payload.sessions.length > 0) {
+                payload.sessions.forEach(session => {
+                    const dayContainer = window.addDay(session.session_name);
+                    if (dayContainer) {
+                        session.exercises.forEach(ex => {
+                            window.addExercise(dayContainer, {
+                                name: ex.name,
+                                muscle: ex.muscle_group,
+                                type: ex.type,
+                                sets: ex.sets,
+                                reps: ex.reps,
+                                rpe: ex.rpe
+                            });
+                        });
+                    }
+                });
+                return; // Skip bootstrap if loaded
+            }
+        } catch (e) {
+            console.error('Failed to load state from localStorage:', e);
+            // Fallback to bootstrap if JSON parse fails
+        }
+    }
+
     // Bootstrap application with some filler days
     const pushDay = window.addDay("Push Day");
     if (pushDay) {

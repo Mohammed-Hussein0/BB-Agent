@@ -176,24 +176,26 @@ window.closeElaborationModal = function() {
 function compilePayload() {
     const payload = {
         routine_name: "User Workout Routine",
+        experience: document.getElementById('experience') ? document.getElementById('experience').value : "intermediate",
         days_per_week: parseInt(document.getElementById('frequency').value) || 0,
-        goal: document.getElementById('goal').value,
+        goal: document.getElementById('goal') ? document.getElementById('goal').value : "hypertrophy",
         sessions: []
     };
 
     const dayCards = document.querySelectorAll('.day-card');
     dayCards.forEach(card => {
-        const dayName = card.querySelector('.day-title').value || "Unnamed Day";
+        const dayName = card.querySelector('.day-title') ? card.querySelector('.day-title').value : "Unnamed Day";
         const dayData = { session_name: dayName, exercises: [] };
 
         const rows = card.querySelectorAll('.exercise-row');
         rows.forEach(row => {
             dayData.exercises.push({
-                name: row.querySelector('.ex-name').value || "Unknown Exercise",
-                muscle_group: row.querySelector('.ex-muscle').value || "Unknown",
-                type: row.querySelector('.ex-type').value || "compound",
-                sets: parseInt(row.querySelector('.ex-sets').value) || 0,
-                reps: row.querySelector('.ex-reps').value || "8-12" // keep as string to preserve ranges like "8-12"
+                name: row.querySelector('.ex-name') ? row.querySelector('.ex-name').value : "Unknown Exercise",
+                muscle_group: row.querySelector('.ex-muscle') ? row.querySelector('.ex-muscle').value : "Unknown",
+                type: row.querySelector('.ex-type') ? row.querySelector('.ex-type').value : "compound",
+                sets: row.querySelector('.ex-sets') ? (parseInt(row.querySelector('.ex-sets').value) || 0) : 0,
+                reps: row.querySelector('.ex-reps') ? row.querySelector('.ex-reps').value : "8-12",
+                rpe: row.querySelector('.ex-rpe') ? row.querySelector('.ex-rpe').value : ""
             });
         });
         payload.sessions.push(dayData);
@@ -201,6 +203,57 @@ function compilePayload() {
 
     return payload;
 }
+
+// Autosave Logic
+let autosaveTimeout = null;
+window.saveRoutineState = function() {
+    try {
+        const payload = compilePayload();
+        localStorage.setItem('workout_routine_save', JSON.stringify(payload));
+    } catch (e) {
+        console.error('Failed to save state to localStorage:', e);
+    }
+};
+
+document.addEventListener('input', (e) => {
+    // Only save if interacting with routine inputs
+    if (e.target.closest('#experience, #goal, #frequency, #days-container')) {
+        clearTimeout(autosaveTimeout);
+        autosaveTimeout = setTimeout(window.saveRoutineState, 1000);
+    }
+});
+
+document.addEventListener('change', (e) => {
+    if (e.target.closest('#experience, #goal, #frequency, #days-container')) {
+        window.saveRoutineState();
+    }
+});
+
+// Guarantee save on page refresh/close
+window.addEventListener('beforeunload', () => {
+    window.saveRoutineState();
+});
+
+// Observe structural changes (like adding/removing days or exercises)
+document.addEventListener('DOMContentLoaded', () => {
+    const daysContainer = document.getElementById('days-container');
+    if (daysContainer) {
+        const observer = new MutationObserver((mutations) => {
+            let shouldSave = false;
+            for (let mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    shouldSave = true;
+                    break;
+                }
+            }
+            if (shouldSave) {
+                clearTimeout(autosaveTimeout);
+                autosaveTimeout = setTimeout(window.saveRoutineState, 1000);
+            }
+        });
+        observer.observe(daysContainer, { childList: true, subtree: true });
+    }
+});
 
 // Parse plaintext output from AI backend
 function parseAnthropicResponse(text) {
